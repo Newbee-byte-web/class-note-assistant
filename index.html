@@ -189,6 +189,42 @@
   .tip{font-size:0.75rem; color:var(--muted); margin-top:10px; line-height:1.7;}
   .tip a{color:var(--accent); text-decoration:none; border-bottom:1px dotted var(--accent-l);}
 
+  /* ---------- 常用模型快捷选项 + 上下文用量提示（v2.2） ----------
+     起因：默认模型 glm-4v-flash 只有 16K 上下文，放不下多张照片，
+     用户报「部分模型用不了」。这里把可选模型和容量算清楚摆出来。 */
+  .mquick{display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;}
+  .mquick .mqtitle{
+    width:100%; font-size:0.6875rem; color:var(--muted); margin-bottom:1px;
+  }
+  .mqitem{
+    display:flex; align-items:baseline; gap:5px; flex-wrap:wrap;
+    font-family:inherit; font-size:0.7188rem; line-height:1.5;
+    padding:5px 10px; border-radius:99px; cursor:pointer;
+    border:1px solid var(--line); background:#fff; color:var(--ink-2);
+    transition:.15s; text-align:left;
+  }
+  .mqitem b{font-weight:600; color:var(--ink);}
+  .mqitem span{font-size:0.6563rem; color:var(--muted);}
+  .mqitem:hover{border-color:var(--accent-l); background:#fdfaf2;}
+  .mqitem.on{border-color:var(--accent); background:#fdf6e6;}
+  .mqitem.on b{color:var(--accent-d, #6b5327);}
+  .mqitem.best:not(.on){border-color:#dbe5d2; background:#f8fbf4;}
+
+  .ctxhint{
+    margin-top:9px; font-size:0.7188rem; line-height:1.7;
+    padding:8px 11px; border-radius:7px;
+    background:#f6f4ee; color:var(--ink-2); border-left:3px solid var(--line);
+  }
+  .ctxhint b{color:var(--ink);}
+  .ctxhint.ok{border-left-color:#8fb37a; background:#f6faf2; color:#4a6440;}
+  .ctxhint.ok b{color:#3d5733;}
+  .ctxhint.warn{border-left-color:#d4a72c; background:#fdf8ec; color:#7a5c12;}
+  .ctxhint.warn b{color:#6b4f0d;}
+
+  @media (max-width:899px){
+    .mqitem{min-height:36px; align-items:center;}
+  }
+
   /* 自定义服务商的接口地址输入块 */
   .basewrap{display:none;}
   .basewrap.show{display:block;}
@@ -258,6 +294,42 @@
   .drop:focus-visible{outline:none; border-color:var(--accent); box-shadow:0 0 0 4px rgba(138,109,59,.15);}
   .pickerrow{display:flex; justify-content:center; margin-top:0.5rem;}
   .picker{min-height:44px; padding:0 30px; font-size:0.875rem;}
+
+  /* ---------- 连不上时的应急通道（v2.3） ----------
+     智谱的接口不返回 CORS 头，浏览器从本地文件调用必定被拦。
+     与其让用户反复点「测试连接」，不如在这里直接给一条能走通的路：
+     推荐换厂商，或者自己搭一个会加 CORS 头的中转。 */
+  .netfix{
+    margin-top:18px; padding:15px 17px; border-radius:10px;
+    background:#fdf3f2; border-left:3px solid var(--warn); color:#8a2f24;
+    font-size:0.8125rem; line-height:1.85;
+  }
+  .netfix b{color:#6d2419;}
+  .netfix .nfwhy{
+    font-size:0.75rem; color:#96685f; margin-top:2px;
+  }
+  .netfix ol{margin:9px 0 0; padding-left:18px;}
+  .netfix li{margin-bottom:7px;}
+  .netfix .nfact{display:flex; gap:8px; margin-top:11px; flex-wrap:wrap;}
+  .netfix .nfact button{
+    font-family:inherit; font-size:0.7813rem; font-weight:600; min-height:34px;
+    padding:6px 13px; border-radius:8px; cursor:pointer;
+    color:#fff; background:var(--accent); border:1px solid var(--accent);
+  }
+  .netfix .nfact button.ghost{color:var(--accent-d, #6b5327); background:#fff; border-color:#e3d8c1;}
+  .netfix .nfact button:hover{opacity:.9;}
+  .netfix[hidden]{display:none;}
+
+  /* ---------- 服务商连通状态条（v2.4） ---------- */
+  .provcors{
+    margin:2px 0 12px; padding:8px 12px; border-radius:8px;
+    font-size:0.75rem; line-height:1.7; display:flex; align-items:flex-start; gap:7px;
+  }
+  .provcors .pcico{flex:none; font-weight:700; line-height:1.5;}
+  .provcors.ok{background:#eef6ec; border-left:3px solid #4a8b3f; color:#2f5c28;}
+  .provcors.no{background:#fdf3f2; border-left:3px solid var(--warn); color:#8a2f24;}
+  .provcors.maybe{background:#fdf8ec; border-left:3px solid #d4a72c; color:#7a5c12;}
+  .provcors[hidden]{display:none;}
   .bar{width:min(420px,80%); height:6px; background:var(--line); border-radius:99px; overflow:hidden; margin-top:6px;}
   .bar i{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--accent-l),var(--accent));
          border-radius:99px; transition:width .35s;}
@@ -1328,6 +1400,10 @@
           </div>
           <div class="provdesc" id="provDesc"></div>
 
+          <!-- 连通状态条（v2.4）：服务商卡片上直接标「能不能用」，
+               避免用户按步骤申请完 Key 才发现这家根本连不上。 -->
+          <div class="provcors" id="provCors"></div>
+
           <div class="provtitle">获取 API Key 的步骤</div>
           <ol class="provsteps" id="provSteps"></ol>
 
@@ -1349,12 +1425,32 @@
 
         <label>模型名</label>
         <input type="text" id="model" placeholder="自动填充" style="max-width:100%">
+        <!-- 常用模型下拉：用户不用记模型 ID，选一下就填好。
+             列在这里的都是「支持看图 + 上下文够放 10 张照片」的型号。 -->
+        <div class="mquick" id="mquick"></div>
+        <!-- 上下文用量提示：张数多了会超模型上限时提前警告，而不是等报错 -->
+        <div class="ctxhint" id="ctxHint"></div>
 
         <div class="row">
           <button class="b" id="test">测试连接</button>
           <button class="b p" id="save">保存</button>
           <button class="b" id="clear">清除</button>
           <span id="state" style="font-size:0.7813rem;color:var(--muted);"></span>
+        </div>
+
+        <!-- 连不上时的应急通道（v2.3）：只有真的失败过才显示。
+             默认隐藏，平时配置不会看到这一块，不干扰正常流程。 -->
+        <div class="netfix" id="netFix" hidden>
+          <b>这家服务商的接口不允许网页直接调用</b>
+          <div class="nfwhy" id="netWhy"></div>
+          <ol>
+            <li><b>换成能直连的服务商</b>（最省事）— 硅基流动、阿里云百炼、火山方舟、Kimi 都支持网页直连，在左栏切换就能用。</li>
+            <li><b>自己搭一个中转</b> — 如果你有服务器、或愿意用 Cloudflare Workers，架一层加上跨域头即可继续用智谱。点下面「如何搭中转」看现成代码。</li>
+          </ol>
+          <div class="nfact">
+            <button type="button" class="nfact-go" data-to="silicon">换成硅基流动</button>
+            <button type="button" class="ghost" id="nfHelp">如何搭中转</button>
+          </div>
         </div>
       </div>
     </div>
@@ -1500,7 +1596,7 @@
       <section class="dsec">
         <h2>快速开始</h2>
         <ol>
-          <li><b>配置模型</b> — 点右上角「未配置模型」，选服务商，按指引申请 API Key 并粘贴，点「测试连接」。配一次即可长期使用。</li>
+          <li><b>配置模型</b> — 点右上角「未配置模型」，选服务商，按指引申请 API Key 并粘贴，点「测试连接」。配一次即可长期使用。<b>连不上就先看服务商</b>：智谱的服务商接口不允许网页直连，换成硅基流动或阿里云百炼最省事（详见下方「连不上怎么办」）。</li>
           <li><b>加照片</b> — 把板书照片拖进虚线框，或点「选择照片」。<b>可以一张一张地加</b>，途中看到不满意的，点缩略图右上角的 × 就能移出，不影响其他张。单次最多 10 张。</li>
           <li><b>开始生成</b> — 凑齐后点「开始生成笔记」。页面会显示进度，耗时取决于照片数量和所选模型，等待时请勿刷新。</li>
           <li><b>命名并保存</b> — 弹出命名窗口后可直接用默认名，确认后自动存入「我的 → 文件箱」。</li>
@@ -1575,11 +1671,14 @@
 
       <section class="dsec">
         <h2>常见问题</h2>
-        <p><b>提示「没连上模型服务」？</b> 可能是跨域被拦截或网络不通，先点「重试」；仍失败可换个服务商。</p>
+        <p><b>一直提示「连不上」/「网络被拦」？</b> 这是<b>服务商是否允许网页调用</b>的问题，不是你的 Key 填错，换模型也不会好。本工具是纯网页、请求从浏览器直接发出，对方必须在响应里写明「允许网页调用」，否则会被浏览器拦下。<b>智谱 GLM 目前没有开放这一项</b>，从本地打开页面时必然连不上；硅基流动、阿里云百炼、火山方舟、Kimi 都可以。设置在点「测试连接」失败后会直接给出切换按钮。</p>
+        <p><b>提示「Key 无效或已过期」？</b> 到服务商控制台重新创建一个 Key 再粘贴。注意复制时不要带上空格或换行，智谱的 Key 中间有一个点（<code>xxxx.yyyy</code>），少一段就会失效。</p>
         <p><b>提示未配置 API Key？</b> 点右上角「未配置模型」按指引填写，并用「测试连接」确认可用。</p>
         <p><b>提示额度用尽？</b> 免费额度和计费规则由各服务商决定，请到其控制台查看或更换模型。</p>
         <p><b>识别结果不对或漏字？</b> 受照片质量和内容复杂度影响。小错可以直接点「编辑」改；整段都乱就别硬改，重拍清晰照片或换能力更强的模型重生成更快。</p>
         <p><b>能接入其他模型吗？</b> 能。服务商选「自定义」，填入兼容通用接口的地址、密钥和模型名，也支持本地部署的模型。</p>
+        <p><b>提示「超出了上下文上限」？</b> 照片太多，当前模型装不下。设置里每张照片约需 1.8K tokens，面板上会实时算给你看「最多几张」。减少照片，或在「常用模型」里换一个上下文更大的（如 <code>glm-4.6v-flash</code> 有 128K）。</p>
+        <p><b>该选哪个模型？</b> <b>先选对服务商</b>——服务商列表已经按「能不能直接用」排好，前两个（硅基流动、阿里云百炼）可以直接连，标「需中转」和「可能不通」的排在下面。模型上，硅基流动的 <code>Qwen3-VL-32B</code>、百炼的 <code>qwen3-vl-plus</code> 效果都不错，都标了「推荐」。避开 <code>glm-4v-flash</code>，它只有 16K 上下文，最多放 6 张。</p>
         <p><b>笔记里的颜色是什么？</b> 标出<b>关键词</b>、<b>核心重点</b>和<b>易错提醒</b>三类内容，与结果区图例对应。默认隐藏标记符号让颜色落在词上，取消勾选可看到原始标记。</p>
         <p><b>照片会被外传吗？</b> 本工具不留存照片；照片仅发送给你选择的服务商用于识别整理。</p>
       </section>
@@ -1738,6 +1837,16 @@
   </div>
 </div>
 
+<!-- 跨域被拦时「如何搭中转」说明弹窗（v2.3） -->
+<div class="modal" id="nfModal" role="dialog" aria-modal="true" aria-labelledby="nfTitle">
+  <div class="mbox">
+    <button class="mclose" id="nfClose" aria-label="关闭">✕</button>
+    <h5 id="nfTitle">跨域被拦怎么办</h5>
+    <div id="nfBody"></div>
+    <button class="mok" id="nfOk">我知道了</button>
+  </div>
+</div>
+
 <!-- 笔记命名弹窗 -->
 <div class="modal" id="nameModal" role="dialog" aria-modal="true" aria-labelledby="nameTitle">
   <div class="mbox nmbox">
@@ -1852,15 +1961,25 @@ function paintIcons(){
 }
 
 /* ==================== 服务商 ==================== */
+/* ==================== 服务商与模型 ====================
+   每个视觉模型都标了 ctx（上下文 token 数）和 maxOut（最大输出）。
+   这两个数不是装饰：一次要发最多 10 张照片，10 张就接近 14K tokens ——
+   上下文只有 16K 的模型会被图片顶满、输出空间不足直接报错。
+   之前默认用的 glm-4v-flash 上下文仅 16K、最大输出仅 1K，
+   而压缩尺寸固定 1600px（单张约 4.3K tokens），这就是「部分模型用不了」的根因。 */
 const PROVIDERS = {
   zhipu: {
     name: '智谱 GLM',
     base: 'https://open.bigmodel.cn/api/paas/v4',
-    model: 'glm-4v-flash',
+    model: 'glm-4.6v-flash',
+    ctx: 128000, maxOut: 32000,
+    cors: false, order: 40,           // 实测无任何 CORS 头，纯前端必然连不上
     vision: true,
-    badge: '免费额度',
-    badgeType: 'free',
-    desc: '国产大模型，看图能力强，<b>glm-4v-flash 目前可免费使用</b>，适合学生党长期白嫖。本网页首选。',
+    badge: '需中转 · 见说明',
+    badgeType: 'paid',
+    desc: '国产大模型，<b>glm-4.6v-flash 免费、128K 上下文</b>，看图能力强、价格最划算。'
+        + '<b>但它的接口不允许网页直接调用</b>——从本页面直接连会失败，'
+        + '需要自己加一层中转（设置里点「如何搭中转」有现成代码），或改用硅基流动、阿里云百炼。',
     steps: [
       '打开 <code>open.bigmodel.cn</code>，用手机号注册并完成实名认证',
       '登录后进入右上角头像 →「API Key」→「用户中心 / 密钥管理」',
@@ -1870,16 +1989,19 @@ const PROVIDERS = {
     ],
     link: 'https://open.bigmodel.cn/usercenter/apikeys',
     linkText: '前往智谱开放平台创建 API Key ↗',
-    note: '免费额度可能随官方政策调整；若提示额度用尽，可在控制台查看或换成付费模型。'
+    note: '注意：<b>本页面无法直接连通智谱</b>（接口未开放跨域），'
+        + '点「测试连接」会失败，这不是 Key 的问题。要用智谱请先自建中转，或直接换服务商。'
   },
   silicon: {
     name: '硅基流动',
     base: 'https://api.siliconflow.cn/v1',
-    model: 'Qwen/Qwen2.5-VL-72B-Instruct',
+    model: 'Qwen/Qwen3-VL-32B-Instruct',
+    ctx: 262144, maxOut: 32000,
+    cors: true, order: 10,            // 实测放行跨域，可直接用
     vision: true,
-    badge: '注册送额度',
+    badge: '注册送额度 · 可直接用',
     badgeType: 'free',
-    desc: '模型超市，注册即送体验额度，模型选择多，界面清爽。',
+    desc: '<b>推荐首选</b>：接口允许网页直接调用，注册即送体验额度，视觉模型选择多，Qwen3-VL 系列看图很强。',
     steps: [
       '打开 <code>cloud.siliconflow.cn</code>，用手机号或微信注册',
       '登录后点击左下角头像 →「API 密钥」',
@@ -1889,31 +2011,35 @@ const PROVIDERS = {
     ],
     link: 'https://cloud.siliconflow.cn/account/ak',
     linkText: '前往硅基流动创建 API Key ↗',
-    note: '赠送额度用完后需充值，价格通常比官方直连便宜。'
+    note: '<code>Qwen/Qwen3-VL-32B-Instruct</code> 效果最好；想省钱可换 <code>Qwen/Qwen3-VL-8B-Instruct</code>，识别板书也够用。'
   },
   qwen: {
     name: '阿里云百炼',
     base: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
-    model: 'qwen-vl-plus',
+    model: 'qwen3-vl-plus',
+    ctx: 256000, maxOut: 32000,
+    cors: true, order: 20,            // 实测放行跨域，可直接用
     vision: true,
-    badge: '需实名',
-    badgeType: 'paid',
-    desc: '阿里云通义千问系列，企业级稳定性，需要阿里云账号实名认证。',
+    badge: '新用户送额度 · 可直接用',
+    badgeType: 'free',
+    desc: '阿里云通义千问系列，企业级稳定性，接口允许网页直接调用。首次开通通常赠送大量 Token，需要阿里云账号实名认证。',
     steps: [
       '打开 <code>bailian.console.aliyun.com</code>，用阿里云账号登录（没有则先注册）',
       '完成个人实名认证（需身份证 + 人脸识别，约 2 分钟）',
-      '开通「百炼大模型服务」，首次开通通常赠送一批免费 Token',
+      '开通「百炼大模型服务」，首次开通会赠送一批免费 Token（90 天有效）',
       '进入控制台右上角「API-KEY」→「创建我的 API-KEY」',
       '复制生成的 Key —— 形如 <code>sk-xxxxxxxx</code>，粘贴到下方输入框'
     ],
     link: 'https://bailian.console.aliyun.com/?apiKey=1',
     linkText: '前往阿里云百炼创建 API Key ↗',
-    note: '模型名填 <code>qwen-vl-plus</code> 即可，无需创建额外应用。'
+    note: '模型名填 <code>qwen3-vl-plus</code> 即可。想更便宜可换成 <code>qwen-vl-plus</code>（老版本，但更省）。'
   },
   ark: {
     name: '火山方舟（豆包）',
     base: 'https://ark.cn-beijing.volces.com/api/v3',
-    model: 'doubao-vision-pro-32k',
+    model: '',
+    ctx: 256000, maxOut: 32000,
+    cors: 'maybe', order: 50,         // 回显 Origin，file:// 下源为 null，不保证过
     vision: true,
     badge: '需创建接入点',
     badgeType: 'paid',
@@ -1922,7 +2048,7 @@ const PROVIDERS = {
       '打开 <code>console.volcengine.com/ark</code>，用抖音/手机号登录火山引擎',
       '完成实名认证并开通「火山方舟」服务',
       '左侧菜单进入「在线推理」→「创建推理接入点」',
-      '选择 <b>doubao-vision-pro-32k</b>（或其它带 vision 的豆包模型）并确认创建',
+      '选择带 <b>vision / 多模态</b> 标记的豆包模型（如 <b>doubao-seed-1.6-vision</b>）并确认创建',
       '复制生成的<b>接入点 ID</b>（形如 <code>ep-2024xxxx-xxxxx</code>），填入下方「模型名」',
       '再到左侧「API Key 管理」创建密钥，粘贴到下方「API Key」输入框'
     ],
@@ -1933,7 +2059,9 @@ const PROVIDERS = {
   moonshot: {
     name: '月之暗面 Kimi',
     base: 'https://api.moonshot.cn/v1',
-    model: 'moonshot-v1-8k-vision-preview',
+    model: 'moonshot-v1-128k-vision-preview',
+    ctx: 128000, maxOut: 32000,
+    cors: 'maybe', order: 60,         // 同火山，校验来源
     vision: true,
     badge: '需充值',
     badgeType: 'paid',
@@ -1947,12 +2075,14 @@ const PROVIDERS = {
     ],
     link: 'https://platform.moonshot.cn/console/api-keys',
     linkText: '前往 Kimi 开放平台创建 API Key ↗',
-    note: '充值后额度长期有效，不会过期。'
+    note: '充值后额度长期有效。注意 <code>8k</code> / <code>32k</code> 版本的视觉模型放不下多张照片，请用 <code>128k</code> 版。'
   },
   custom: {
     name: '自定义（OpenAI 兼容）',
     base: '',
     model: '',
+    ctx: 0, maxOut: 0,          // 0 = 未知，不做上下文校验
+    cors: true, order: 90,      // 地址由用户自己填，能否连通取决于那台服务
     vision: true,
     badge: '进阶',
     badgeType: 'paid',
@@ -1961,7 +2091,7 @@ const PROVIDERS = {
       '确认你的服务提供 <code>/chat/completions</code> 接口，且支持传入 <code>image_url</code> 图片',
       '在下方「接口地址」填入 Base URL —— 以 <code>/v1</code> 结尾最稳妥，例如 <code>http://localhost:11434/v1</code>',
       '填入该服务要求的 API Key（本地服务若不需要，随便填一个字符即可）',
-      '在「模型名」填入你要用的视觉模型名，例如 <code>llava:13b</code>',
+      '在「模型名」填入你要用的视觉模型名，例如 <code>qwen2.5vl:7b</code>',
       '点「测试连接」验证'
     ],
     link: 'https://platform.openai.com/docs/api-reference/chat',
@@ -1969,6 +2099,80 @@ const PROVIDERS = {
     note: '若你的服务跑在 <code>localhost</code>，请确认它已开启跨域（CORS）允许，否则浏览器会拦截请求。'
   }
 };
+
+/* 每个服务商的推荐模型清单（显示为可点的快捷选项）。
+   只放「确实支持看图」的型号，避免用户选到纯文本模型后一直报错。 */
+const MODEL_PRESETS = {
+  zhipu: [
+    { id: 'glm-4.6v-flash', label: 'GLM-4.6V-Flash', tag: '免费 · 128K · 需中转', best: true, ctx: 128000 },
+    { id: 'glm-4.5v', label: 'GLM-4.5V', tag: '付费 · 64K · 更准', ctx: 64000 },
+    { id: 'glm-4.1v-thinking-flash', label: 'GLM-4.1V-Thinking', tag: '免费 · 64K', ctx: 64000 },
+    { id: 'glm-4v-flash', label: 'GLM-4V-Flash', tag: '免费 · 仅 16K · 最多 1 张', ctx: 16000 }
+  ],
+  silicon: [
+    { id: 'Qwen/Qwen3-VL-32B-Instruct', label: 'Qwen3-VL-32B', tag: '推荐 · 效果最好 · 262K', best: true, ctx: 262144 },
+    { id: 'Qwen/Qwen3-VL-8B-Instruct', label: 'Qwen3-VL-8B', tag: '便宜 · 262K', ctx: 262144 },
+    { id: 'zai-org/GLM-4.5V', label: 'GLM-4.5V', tag: '通用视觉', ctx: 64000 },
+    { id: 'Qwen/Qwen2.5-VL-72B-Instruct', label: 'Qwen2.5-VL-72B', tag: '老版本 · 较贵', ctx: 131072 }
+  ],
+  qwen: [
+    { id: 'qwen3-vl-plus', label: 'Qwen3-VL-Plus', tag: '推荐 · 最新 · 256K', best: true, ctx: 256000 },
+    { id: 'qwen-vl-max', label: 'Qwen-VL-Max', tag: '识别更准 · 较贵', ctx: 32000 },
+    { id: 'qwen-vl-plus', label: 'Qwen-VL-Plus', tag: '便宜 · 32K', ctx: 32000 }
+  ],
+  ark: [],
+  moonshot: [
+    { id: 'moonshot-v1-128k-vision-preview', label: 'Kimi 视觉 128K', tag: '可能不通 · 128K', best: true, ctx: 128000 },
+    { id: 'moonshot-v1-32k-vision-preview', label: 'Kimi 视觉 32K', tag: '最多 4 张', ctx: 32000 },
+    { id: 'moonshot-v1-8k-vision-preview', label: 'Kimi 视觉 8K', tag: '最多 1 张', ctx: 8000 }
+  ],
+  custom: []
+};
+
+/* 单张照片压缩后的 token 估算。
+   主流厂商（智谱 / DashScope / OpenAI）都按「像素数 ÷ 784」折算视觉 token，
+   这里用同一口径，误差在一两成内，足够用来提前预警。
+   横竖比例按常见板书竖拍 3:4 估。 */
+function estTokensPerImage(maxSide){
+  const w = maxSide, h = Math.round(maxSide * 4 / 3);
+  return Math.round(w * h / 784);
+}
+/* 按模型上下文算出「安全能发几张」。
+   用 MIN_SIDE（1024px）作基准 —— 这是板书还看得清的下限。
+   不能跟着 pickSide 走，否则张数越多尺寸越小，算出来永远「放得下」，
+   这个预检就形同虚设。
+   只用 72% 的上下文：剩下的留给提示词和输出，否则图放得下、答案却写不完。 */
+const MIN_SIDE = 1024;
+function safeImageCount(ctx){
+  if (!ctx) return 99;                       // 未知上下文：不做限制
+  const per = estTokensPerImage(MIN_SIDE);
+  return Math.max(1, Math.floor((ctx * 0.72) / per));
+}
+/* 按张数 + 模型上下文选择压缩尺寸。
+   两个约束同时满足：
+   ① 张数多就压小一点，省 token 也省流量；
+   ② 但不超过模型上下文能承受的尺寸 —— 小上下文模型即使只有 1 张也要压小。
+   这是「部分模型用不了」的直接修复点：以前固定 1600px，16K 上下文模型必炸。
+   下限 1024px：再小板书字就糊了，识别率会明显下降。
+   所以宁可让预检拦下来、让用户少选几张，也不把图压成马赛克硬塞。 */
+function pickSide(n, ctx){
+  let side;
+  if (n <= 2) side = 1400;
+  else if (n <= 4) side = 1200;
+  else if (n <= 6) side = 1152;
+  else if (n <= 8) side = 1088;
+  else side = MIN_SIDE;
+
+  // ② 再按上下文压：确保 n 张的总 token 落在可用额度内
+  if (ctx){
+    const budget = ctx * 0.72;
+    while (side > MIN_SIDE && estTokensPerImage(side) * n > budget){
+      side = Math.max(MIN_SIDE, Math.round(side * 0.88 / 8) * 8);
+    }
+  }
+  return side;
+}
+
 
 /* ==================== 配置读写 ==================== */
 function loadCfg(){
@@ -1987,12 +2191,35 @@ function cfgReady(c){
 
 function initProviders(){
   const sel = $('provider');
+
+  /* 排序 + 标注（v2.4）：能直接用的排在最上面，需要中转或可能不通的压到下面。
+     这是一个纯前端的工具，能不能连通完全取决于对方是否放行跨域，
+     所以「哪个能用」必须在下拉里一眼看出来，而不是让用户一个个试过去。
+     顺序由各服务商的 order 字段决定，不依赖对象字面量的书写顺序。 */
   sel.innerHTML = Object.entries(PROVIDERS)
-    .map(([k, v]) => `<option value="${k}">${v.name}</option>`).join('');
+    .sort((a, b) => (a[1].order || 99) - (b[1].order || 99))
+    .map(([k, v]) => `<option value="${k}">${v.name}${provSuffix(k)}</option>`).join('');
+
   const c = loadCfg();
-  sel.value = c.provider && PROVIDERS[c.provider] ? c.provider : 'zhipu';
+  sel.value = c.provider && PROVIDERS[c.provider] ? c.provider : 'silicon';
+
+  /* v2.2 迁移：老用户存着已经不可用/名额不够的模型名，
+     不自动换掉的话，他们升级后仍然会继续报错。
+     只迁移「已知有问题」的那几个，用户自己输入的其他模型名一律不动。 */
+  const DEPRECATED = {
+    'glm-4v-flash': 'glm-4.6v-flash',                    // 16K 上下文，多张图必爆
+    'Qwen/Qwen2.5-VL-72B-Instruct': 'Qwen/Qwen3-VL-32B-Instruct',
+    'moonshot-v1-8k-vision-preview': 'moonshot-v1-128k-vision-preview',
+    'doubao-vision-pro-32k': ''
+  };
+  let savedModel = c.model || '';
+  if (savedModel && DEPRECATED[savedModel] !== undefined){
+    const to = DEPRECATED[savedModel];
+    if (to) savedModel = to;
+  }
+
   $('key').value = c.key || '';
-  $('model').value = c.model || PROVIDERS[sel.value].model;
+  $('model').value = savedModel || PROVIDERS[sel.value].model;
   if (sel.value === 'custom') $('baseWrap')?.classList.add('show');
   renderProv();
   refreshBadge();
@@ -2008,6 +2235,36 @@ function renderProv(){
   const badge = $('provBadge');
   badge.textContent = p.badge || '';
   badge.className = 'provbadge' + (p.badgeType === 'free' ? ' free' : '');
+
+  /* 连通状态条：这是本工具最影响成败的一项，放在介绍文案之前。
+     用户往往按右栏步骤申请完 Key 才发现连不上，白跑一趟。 */
+  const cs = $('provCors');
+  if (cs){
+    const key = $('provider').value;
+    const c = CORS_OK[key];
+    cs.hidden = false;
+    if (key === 'custom'){
+      cs.className = 'provcors ok';
+      cs.innerHTML = `<span class="pcico">✓</span><span>取决于你填的地址。`
+        + `自建服务需自行开启跨域（CORS）允许，否则浏览器同样会拦下请求。</span>`;
+    } else if (c === true){
+      cs.className = 'provcors ok';
+      cs.innerHTML = `<span class="pcico">✓</span><span>可以直接使用。`
+        + `接口放行网页调用，粘贴 Key 后点「测试连接」即可。</span>`;
+    } else if (c === 'maybe'){
+      cs.className = 'provcors maybe';
+      cs.innerHTML = `<span class="pcico">!</span><span>可能连不通。`
+        + `这家会校验请求来源，而本工具是从本地文件打开的（来源为空），`
+        + `可能被拒。建议优先用上面的硅基流动或阿里云百炼。</span>`;
+    } else if (c === false){
+      cs.className = 'provcors no';
+      cs.innerHTML = `<span class="pcico">✕</span><span>不能直接使用。`
+        + `接口没有放行网页调用，<b>换模型、换 Key 都不会成功</b>。`
+        + `要用这家必须先自建中转（点右侧「如何搭中转」有现成代码）。</span>`;
+    } else {
+      cs.hidden = true;
+    }
+  }
 
   $('provDesc').innerHTML = p.desc || '';
 
@@ -2031,6 +2288,86 @@ function renderProv(){
   }
   note.innerHTML = p.note || '';
   note.style.display = p.note ? '' : 'none';
+
+  renderModelQuick();
+  updateCtxHint();
+}
+
+/* 渲染「常用模型」快捷选项。点一下就把模型 ID 填进输入框，
+   省得用户去文档里翻一长串带斜杠的 ID（大小写错一个字符就 404）。 */
+function renderModelQuick(){
+  const box = $('mquick');
+  if (!box) return;
+  const key = $('provider').value;
+  const list = MODEL_PRESETS[key] || [];
+  if (!list.length){
+    box.innerHTML = '';
+    box.style.display = 'none';
+    return;
+  }
+  box.style.display = '';
+  const cur = $('model').value.trim();
+  box.innerHTML = '<div class="mqtitle">常用模型（点一下填入）</div>' +
+    list.map(m => {
+      const on = m.id === cur ? ' on' : '';
+      return `<button type="button" class="mqitem${on}${m.best ? ' best' : ''}" data-mid="${m.id}">
+                <b>${m.label}</b><span>${m.tag}</span>
+              </button>`;
+    }).join('');
+}
+
+/* 上下文用量提示：告诉用户「当前模型 + 当前张数」放不放得下。
+   放在配置面板里，用户切模型、改张数时都能立刻看到，
+   而不是等到点了「开始生成」才收到一个看不懂的 400 错误。 */
+function updateCtxHint(n){
+  const el = $('ctxHint');
+  if (!el) return;
+  const key = $('provider').value;
+  const p = PROVIDERS[key] || {};
+  const modelId = ($('model').value || '').trim();
+  const ctx = modelCtx(modelId, p.ctx);
+
+  if (!ctx){
+    el.className = 'ctxhint';
+    el.textContent = '自定义模型：无法预知上下文大小，照片较多时可能失败，可少选几张。';
+    return;
+  }
+
+  const count = n || (pendingImages.length || 1);
+  const maxN = safeImageCount(ctx);
+  const ok = count <= maxN;
+
+  // 实际会用到的尺寸（可能因上下文被压小），提示里如实反映
+  const side = pickSide(count, ctx);
+  const per = estTokensPerImage(side);
+  const total = per * count;
+
+  const ctxLabel = ctx >= 1000 ? Math.round(ctx / 1000) + 'K' : String(ctx);
+  el.className = 'ctxhint' + (ok ? ' ok' : ' warn');
+  el.innerHTML = ok
+    ? `当前模型上下文 <b>${ctxLabel}</b>，${count} 张约 ${fmtTok(total)} tokens，`
+      + `最多可放 <b>${maxN} 张</b>。`
+    : `⚠ 当前模型上下文仅 <b>${ctxLabel}</b>，${count} 张至少要 ${fmtTok(total)} tokens，`
+      + `最多只能放 <b>${maxN} 张</b>。请减少照片，或在上面换一个上下文更大的模型。`;
+}
+
+/* 取模型的上下文上限：先按模型 ID 精确匹配（同名模型在不同渠道上下文可能不同），
+   匹配不到就退回服务商默认值。 */
+function modelCtx(modelId, fallback){
+  if (!modelId) return fallback || 0;
+  for (const list of Object.values(MODEL_PRESETS)){
+    const hit = list.find(m => m.id === modelId);
+    if (hit && hit.ctx) return hit.ctx;
+  }
+  // 老型号兜底识别：名字里带 8k / 32k / 128k 的直接按名字取
+  const m = modelId.toLowerCase().match(/(\d+)k/);
+  if (m) return Number(m[1]) * 1000;
+  return fallback || 0;
+}
+
+function fmtTok(n){
+  if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+  return String(n);
 }
 
 function refreshBadge(){
@@ -2077,6 +2414,23 @@ $('provider').addEventListener('change', () => {
   }
 
   renderProv();
+  // 换到放行跨域的厂商后，之前那条「不允许直连」的提示就该消失
+  if (CORS_OK[key]) hideNetFix();
+});
+
+/* 常用模型：点击填入模型 ID */
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('.mqitem');
+  if (!b) return;
+  $('model').value = b.dataset.mid;
+  renderModelQuick();
+  updateCtxHint();
+});
+
+/* 手动改模型名时，提示跟着变 */
+$('model').addEventListener('input', () => {
+  renderModelQuick();
+  updateCtxHint();
 });
 
 $('keyToggle').addEventListener('click', () => {
@@ -2108,6 +2462,50 @@ $('clear').addEventListener('click', () => {
   refreshBadge();
 });
 
+/* 该服务商的接口是否会放行浏览器跨域。
+   v2.3 实测（2026-10）：智谱的预检 OPTIONS 返回 200 但**不带任何
+   Access-Control-Allow-* 头**，浏览器因此判定失败，fetch 直接抛
+   TypeError —— 这就是「换几个模型都连不上」的真正原因，和 Key、模型名都无关。
+   硅基流动 / 百炼正常返回 `ACAO: *`；火山、Kimi 会校验 Origin，
+   从 file:// 打开时源是 null，不保证通过，标 'maybe'。
+
+   这里从 PROVIDERS 派生，不再单独维护一份 —— 之前两处各写一遍，
+   改一处忘另一处就会让下拉列表和失败提示说两套话。 */
+const CORS_OK = Object.fromEntries(
+  Object.entries(PROVIDERS).map(([k, v]) => [k, v.cors])
+);
+
+/* 下拉里的状态后缀。空字符串表示不加后缀（就是正常可用） */
+function provSuffix(k){
+  const c = CORS_OK[k];
+  if (c === false) return ' —— 需中转';
+  if (c === 'maybe') return ' —— 可能不通';
+  return '';
+}
+
+/* 打开「连不上」应急通道。why 为一句说明，没有就自动生成 */
+function showNetFix(prov, why){
+  const p = PROVIDERS[prov] || {};
+  const el = $('netFix');
+  if (!el) return;
+  $('netWhy').textContent = why || (p.name
+      ? `「${p.name}」的接口没有返回跨域许可头，浏览器会直接拦下请求，换模型、换 Key 都不会生效。`
+      : '这家接口没有返回跨域许可头，浏览器会直接拦下请求。');
+  // 主推一个「确定能直连」的替代厂商，用户点一下就能切换。
+  // 必须严格判 === true：'maybe' 也是真值，但那两家不一定通，推过去等于换个坑。
+  const alt = Object.entries(PROVIDERS)
+    .filter(([k, v]) => k !== prov && k !== 'custom' && v.cors === true)
+    .sort((a, b) => (a[1].order || 99) - (b[1].order || 99))
+    .map(([k]) => k)[0] || 'silicon';
+  const btn = el.querySelector('.nfact-go');
+  if (btn){
+    btn.dataset.to = alt;
+    btn.textContent = '换成' + (PROVIDERS[alt] ? PROVIDERS[alt].name : '其他服务商');
+  }
+  el.hidden = false;
+}
+function hideNetFix(){ const el = $('netFix'); if (el) el.hidden = true; }
+
 $('test').addEventListener('click', async () => {
   const prov = $('provider').value;
   const key = $('key').value.trim();
@@ -2115,13 +2513,18 @@ $('test').addEventListener('click', async () => {
   const base = prov === 'custom' ? ($('base')?.value || '').trim() : PROVIDERS[prov].base;
   if (!key){ $('state').textContent = '请先填写 Key'; return; }
 
+  hideNetFix();
   $('state').textContent = '测试中…';
+  // 20 秒超时：模型服务偶发卡住时，不给超时就会一直停在「测试中…」
+  const ctl = typeof AbortController === 'function' ? new AbortController() : null;
+  const timer = ctl ? setTimeout(() => ctl.abort(), 20000) : null;
   try {
     const cfg = { provider: prov, key, model, base };
     const r = await fetch(base.replace(/\/$/, '') + '/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
-      body: JSON.stringify({ model, messages: [{ role: 'user', content: 'hi' }], max_tokens: 5 })
+      body: JSON.stringify({ model, messages: [{ role: 'user', content: 'hi' }], max_tokens: 5 }),
+      signal: ctl ? ctl.signal : undefined
     });
     if (r.ok){
       $('state').textContent = '连接成功 ✓ 已自动保存';
@@ -2130,11 +2533,112 @@ $('test').addEventListener('click', async () => {
       let m = 'HTTP ' + r.status;
       try { const j = await r.json(); m = (j.error && (j.error.message || j.error.msg)) || j.message || m; } catch(e){}
       $('state').textContent = '失败：' + String(m).slice(0, 60);
+      // 401 是 Key 本身的问题，给一句能直接对上的话
+      if (r.status === 401 || r.status === 403){
+        $('state').textContent = '失败：Key 无效或已过期（' + String(m).slice(0, 40) + '）';
+      }
     }
   } catch(e){
-    $('state').textContent = '失败：网络被拦（可能是该厂商不允许网页直连）';
+    const aborted = e && (e.name === 'AbortError' || /abort/i.test(e.message || ''));
+    if (aborted){
+      $('state').textContent = '失败：超时（20 秒没响应）';
+      showNetFix(prov, '等了 20 秒没有响应。可能是网络不通、代理/防火墙拦截，或该服务商暂时不可用。');
+    } else if (CORS_OK[prov] === false){
+      // 这家本来就不放行跨域 —— 说得确定一点，别让用户怀疑自己填错了
+      $('state').textContent = '失败：该服务商不允许网页直连（与 Key 无关）';
+      showNetFix(prov);
+    } else if (CORS_OK[prov] === 'maybe'){
+      // 火山 / Kimi 会校验来源，从本地文件打开时源是 null，很可能就是被这条挡住
+      $('state').textContent = '失败：请求被拦（可能不支持的来源）';
+      showNetFix(prov, '这家会校验请求来源。本工具是本地文件打开的，来源为空，'
+                      + '可能因此被拒。换成硅基流动或阿里云百炼可以直接用。');
+    } else {
+      $('state').textContent = '失败：请求没发出去（网络或跨域被拦）';
+      showNetFix(prov, '请求没能发出去。常见原因：网络不通、公司/学校网络限制，或该接口未放行跨域。');
+    }
+  } finally {
+    if (timer) clearTimeout(timer);
   }
 });
+
+/* 应急通道里的两个按钮 */
+$('netFix').addEventListener('click', e => {
+  const go = e.target.closest('.nfact-go');
+  if (go){
+    const to = go.dataset.to;
+    $('provider').value = to;
+    $('key').value = '';
+    $('model').value = (PROVIDERS[to] || {}).model || '';
+    hideNetFix();
+    renderProv();
+    $('state').textContent = '已切到' + ((PROVIDERS[to] || {}).name || '') + '，请粘贴对应的 Key';
+    $('key').focus();
+    return;
+  }
+  if (e.target.id === 'nfHelp'){
+    $('nfBody').innerHTML = nfHelpHtml();
+    $('nfModal').classList.add('show');
+  }
+});
+
+/* 说明弹窗的关闭：点按钮、点遮罩都能关 */
+['nfClose', 'nfOk'].forEach(id => {
+  const el = $(id);
+  if (el) el.addEventListener('click', () => $('nfModal').classList.remove('show'));
+});
+$('nfModal').addEventListener('click', e => {
+  if (e.target.id === 'nfModal') $('nfModal').classList.remove('show');
+});
+
+/* 「如何搭中转」的说明。给的是可直接粘的 Cloudflare Worker 代码，
+   因为这是唯一不需要自己买服务器、又有免费额度的做法。 */
+function nfHelpHtml(){
+  return `
+    <p><b>为什么会这样？</b>本工具是纯网页、双击打开就能用，所有请求都由你的浏览器发出。
+    浏览器有一条安全规则（同源策略）：对方服务器必须在响应里明确写「允许网页调用我」，
+    否则请求会被拦下。<b>智谱的接口没有写这一句</b>，所以从网页直接调用必然失败——
+    换模型、换 Key 都不起作用。</p>
+    <p><b>办法一（推荐）：换一家支持网页直连的。</b>硅基流动、阿里云百炼都正常，
+    在左栏切换服务商、粘贴对应 Key 即可，不用折腾。</p>
+    <p><b>办法二：自己加一层中转。</b>如果你有 Cloudflare 账号（免费），
+    新建一个 Worker，把下面的代码粘进去、部署，然后回到本工具：
+    服务商选「自定义」，「接口地址」填<b>你部署得到的地址</b>（以 <code>/v1</code> 结尾），
+    「模型名」填 <code>glm-4.6v-flash</code>，Key 仍填智谱的 Key。</p>
+    <pre style="white-space:pre-wrap;word-break:break-all;background:#f4f1e8;padding:12px;border-radius:8px;
+                font-size:0.75rem;line-height:1.7;margin:10px 0;">export default {
+  async fetch(req) {
+    const url = new URL(req.url);
+    // 跨域预检直接放行
+    if (req.method === 'OPTIONS') {
+      return new Response(null, { headers: cors() });
+    }
+    // 把 /v1/chat/completions 转到智谱
+    const target = 'https://open.bigmodel.cn/api/paas/v4'
+                 + url.pathname.replace(/^\\/v1/, '');
+    const r = await fetch(target, {
+      method: req.method,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': req.headers.get('Authorization') || ''
+      },
+      body: req.method === 'GET' ? undefined : await req.text()
+    });
+    const out = new Response(r.body, r);
+    Object.entries(cors()).forEach(([k, v]) => out.headers.set(k, v));
+    return out;
+  }
+};
+function cors() {
+  return {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+    'Access-Control-Allow-Headers': 'authorization,content-type'
+  };
+}</pre>
+    <p style="font-size:0.75rem;color:#8d8677;">中转只做转发，不保存你的 Key 和照片。
+    如果你不愿意折腾，<b>直接用办法一就好</b>，效果没有差别。</p>
+  `;
+}
 
 /* ==================== 提示 ==================== */
 /* 平滑滚动工具：脚本里写死 behavior:'smooth' 不受 CSS 的
@@ -2209,6 +2713,18 @@ function humanize(status, raw){
     return { msg: '调用太频繁，或免费额度已用完。等一分钟再试，或在服务商控制台查看余额。',
              fix: { label: '重新配置', run: openCfg } };
   }
+  /* 上下文超限单独识别：各家措辞不同（context length / token 超限 /
+     maximum context / 1220 等），但只要命中，用户最该做的是「减少张数或换模型」，
+     而不是去检查 Key。这个判断必须放在通用 400 之前，否则会被笼统归类。 */
+  if (/context|too many tokens|token.*exceed|maximum.*token|超出.*长度|1220|40011/i.test(r)){
+    return { msg: '照片太多，超出了当前模型的上下文上限。减掉几张再试，'
+                 + '或者在设置里换一个上下文更大的模型（如 GLM-4.6V-Flash）。',
+             fix: { label: '检查设置', run: openCfg } };
+  }
+  if (/image|图片|vision|multimodal/i.test(r) && /not.*support|unsupport|不支持|invalid/i.test(r)){
+    return { msg: '当前模型不支持看图。请换成带 vision / VL / 多模态能力的模型。',
+             fix: { label: '换模型', run: openCfg } };
+  }
   if (status === 400 || /invalid|参数/i.test(r)){
     return { msg: '请求被拒绝：可能是该模型不支持看图，或图片太大。试试换一个带视觉能力的模型。',
              fix: { label: '检查设置', run: openCfg } };
@@ -2280,8 +2796,41 @@ function compress(file, maxSide, quality){
    这样可以一张一张补拍、把拍糊的删掉，凑齐一批再一次性生成 ——
    既省 token，也避免生成到一半发现少了一张又得重来。 */
 const MAXIMG = 10;          // 单次生成上限
-const P_SIDE = 1600;        // 素材池统一压缩参数
-const P_QUALI = 0.85;
+const P_QUALI = 0.85;       // 统一画质；尺寸由 pickSide(张数) 决定
+
+/* 把池子里所有图按「当前张数对应的尺寸」重新压一遍。
+   为什么要重压：用户可能先加 1 张（按 1400px 压），后来又补到 10 张，
+   那 1 张还是 1400px 的，10 张加起来就会超上下文。
+   这里在「开始生成」前统一校准一次，保证实际发出去的图能被模型吃下。 */
+async function recompressPool(targetSide){
+  const out = [];
+  for (let i = 0; i < pendingImages.length; i++){
+    const u = pendingImages[i];
+    const need = await shrinkDataUrl(u, targetSide);
+    out.push(need);
+  }
+  return out;
+}
+
+/* 把一张已经压过的 dataURL 再压到指定最大边。
+   如果原图本来就比目标小，直接返回原串（不做无意义的重编码，避免画质二次损失）。 */
+function shrinkDataUrl(dataUrl, maxSide){
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const m = Math.max(img.width, img.height);
+      if (m <= maxSide){ resolve(dataUrl); return; }
+      const s = maxSide / m;
+      const w = Math.round(img.width * s), h = Math.round(img.height * s);
+      const cv = document.createElement('canvas');
+      cv.width = w; cv.height = h;
+      cv.getContext('2d').drawImage(img, 0, 0, w, h);
+      resolve(cv.toDataURL('image/jpeg', P_QUALI));
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+}
 
 async function addPhotos(files){
   if (busy) return;
@@ -2312,10 +2861,17 @@ async function addPhotos(files){
 
   try {
     let done = 0;
+    /* 压缩尺寸按「预计最终张数 + 当前模型上下文」来定。
+       真正发请求前还会统一校准一次（见 generate），此处用中间尺寸即可。 */
+    const cfgNow = loadCfg();
+    const ctxNow = cfgReady(cfgNow)
+      ? modelCtx(String(cfgNow.model || '').trim(), (PROVIDERS[cfgNow.provider] || {}).ctx)
+      : 0;
+    const side = pickSide(pendingImages.length + take.length, ctxNow);
     for (const f of take){
       sub.textContent = `正在处理第 ${done + 1} / ${take.length} 张…`;
       try {
-        const u = await compress(f, P_SIDE, P_QUALI);
+        const u = await compress(f, side, P_QUALI);
         pendingImages.push(u);
         pendingNames.push(f.name || ('照片' + (pendingImages.length)));
         done++;
@@ -2333,6 +2889,7 @@ async function addPhotos(files){
     sub.textContent = prevSub;
     renderPending();
     syncEmptyState();
+    updateCtxHint();          // 张数变了，配置面板里的上下文提示同步刷新
   }
 }
 
@@ -2396,10 +2953,69 @@ $('btnClearPending').addEventListener('click', () => {
 $('btnGenerate').addEventListener('click', () => { generate(); });
 
 /* 把池子交给 handle()：先快照再清空，handler 失败时素材要能回来 */
-function generate(){
+async function generate(){
   if (busy || pendingAdding || !pendingImages.length) return;
-  const imgs = pendingImages.slice();
-  const names = pendingNames.slice();
+
+  const n = pendingImages.length;
+
+  /* 发请求前先确认「当前模型放得下这几张」。
+     以前直接把 1600px 的图丢过去，glm-4v-flash 这种 16K 上下文的模型
+     必然被图片顶满、报一个看不懂的 400 —— 用户只会觉得「模型坏了」。
+     现在提前算清楚，放不下就明确告诉用户该怎么做。 */
+  const cfg = loadCfg();
+  let ctxNow = 0;
+  if (cfgReady(cfg)){
+    const p = PROVIDERS[cfg.provider] || {};
+    ctxNow = modelCtx(String(cfg.model || '').trim(), p.ctx);
+    const maxN = safeImageCount(ctxNow);
+    if (ctxNow && n > maxN){
+      alertErr(
+        `当前模型「${cfg.model}」上下文只有 ${fmtTok(ctxNow)} tokens，`
+        + `放不下 ${n} 张照片（最多约 ${maxN} 张）。`,
+        {
+          label: '换推荐模型',
+          run: () => {
+            $('provider').value = cfg.provider === 'custom' ? 'silicon' : cfg.provider;
+            const list = MODEL_PRESETS[$('provider').value] || [];
+            const best = list.find(m => m.best) || list[0];
+            if (best){ $('model').value = best.id; }
+            renderProv(); updateCtxHint();
+            $('panel').classList.add('show');
+            scrollToEl($('panel'), 'center');
+          }
+        }
+      );
+      alertWarn(`也可以减少照片：删到 ${maxN} 张以内再点「开始生成笔记」。`);
+      return;
+    }
+  }
+
+  // 尺寸按「张数 + 上下文」一起定，保证这批图真的能塞进去
+  const side = pickSide(n, ctxNow);
+
+  busy = true;
+  const icon = drop.querySelector('.icon'), main = $('dropMain'), sub = $('dropSub');
+  drop.classList.add('busy');
+  setIcon(icon, 'hourglass', 42);
+  main.textContent = '正在处理…';
+  sub.innerHTML = '<div class="steps" id="steps">正在按模型要求校准图片…</div>'
+                + '<div class="bar"><i id="barI"></i></div>';
+
+  let imgs, names;
+  try {
+    imgs = await recompressPool(side);
+    names = pendingNames.slice();
+  } catch(e){
+    busy = false;
+    drop.classList.remove('busy');
+    setIcon(icon, 'camera', 42);
+    main.textContent = '把照片拖到这里';
+    sub.textContent = '或点击选择图片 · 可一张张添加';
+    alertErr('图片处理失败，请重试一次。');
+    return;
+  }
+
+  busy = false;
   handle(imgs, names);
 }
 
@@ -2486,14 +3102,28 @@ async function handle(imgs, names){
       consumedImgs.forEach(u => content.push({ type: 'image_url', image_url: { url: u } }));
     }
 
+    /* max_tokens 必须显式给：不少模型的默认输出上限很小（有的只有 1024），
+       笔记动辄两三千字，不给就会在句子中间被硬切断，表现为「笔记只写了一半」。
+       按模型的实际上限给，但不超过 8192 —— 再高对这份提示词也没意义，
+       而且有些服务商会因为超过自家限制直接拒绝。 */
+    const provCfg = PROVIDERS[cfg.provider] || {};
+    const ctxNow = modelCtx(String(cfg.model || '').trim(), provCfg.ctx);
+    const outCap = provCfg.maxOut || 8192;
+    const maxTokens = Math.max(2048, Math.min(8192, outCap));
+
+    const body = {
+      model: cfg.model,
+      messages: [{ role: 'user', content }],
+      temperature: 0.2,
+      max_tokens: maxTokens
+    };
+    // 上下文特别小的模型（16K/32K），别再加 max_tokens 之外的隐性开销
+    if (ctxNow && ctxNow <= 32000) body.max_tokens = Math.min(maxTokens, 4096);
+
     const resp = await fetch(cfg.base.replace(/\/$/, '') + '/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + cfg.key },
-      body: JSON.stringify({
-        model: cfg.model,
-        messages: [{ role: 'user', content }],
-        temperature: 0.2
-      })
+      body: JSON.stringify(body)
     });
 
     clearInterval(tick);
@@ -2606,9 +3236,20 @@ async function handle(imgs, names){
     clearInterval(tick);
     let m = (e && e.message) || String(e);
     if (m === 'Failed to fetch' || /NetworkError|load failed/i.test(m)){
-      alertErr('没连上模型服务：可能是浏览器拦住了跨域请求，也可能是网络不通。'
-             + '先点下面重试一次；还是不行就换成智谱 GLM 或硅基流动。',
-             { label: '重试', run: retry });
+      // v2.3：说清到底是哪个原因。用户已经因为「网络被拦」这句模糊提示绕了很久，
+      // 这次直接点明「这家服务商不放行网页直连，换模型没用」，并给出可点的出路。
+      const prov = (typeof loadCfg === 'function' ? loadCfg() : {}).provider;
+      const known = CORS_OK[prov] === false;
+      alertErr(known
+        ? `没连上：「${(PROVIDERS[prov] || {}).name || '该服务商'}」的接口不允许网页直接调用，换模型也不会成功。`
+          + '请到设置里换成硅基流动或阿里云百炼（都支持直连），或者自己搭一层中转。'
+        : '没连上模型服务：可能是网络不通，或该接口不支持网页直连。'
+          + '先点下面重试一次；还是不行就到设置里换一家服务商。',
+        { label: '去设置处理', run: () => {
+            $('panel').classList.add('show');
+            showNetFix(prov);
+            $('test').focus();
+          } });
       return;
     }
     alertErr('整理失败：' + m, { label: '重试', run: retry });
@@ -4357,7 +4998,7 @@ $('fbList').addEventListener('change', e => {
    规则：功能/布局改动 +0.1，纯文案/修复 +0.01。
    当前：v2.0 —— 新手视频改为上下排列、每段标题上置；
                  侧栏左下角新增版本号显示。 */
-const APP_VERSION = 'v2.1';
+const APP_VERSION = 'v2.4';
 (function showVersion(){
   const el = document.getElementById('verText');
   if (el) el.textContent = APP_VERSION;
